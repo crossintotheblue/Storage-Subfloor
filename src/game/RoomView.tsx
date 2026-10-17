@@ -17,8 +17,8 @@ function Panel({
     return g;
   }, [w, h]);
   return (
-    <mesh geometry={geo} position={position} rotation={rotation}>
-      <meshStandardMaterial map={map} color={color} roughness={0.85} transparent={transparent} alphaTest={transparent ? 0.5 : 0} side={transparent ? THREE.DoubleSide : THREE.FrontSide} />
+    <mesh geometry={geo} position={position} rotation={rotation ?? [0, 0, 0]}>
+      <meshStandardMaterial map={map} color={color} roughness={0.85} transparent={!!transparent} alphaTest={transparent ? 0.5 : 0} side={transparent ? THREE.DoubleSide : THREE.FrontSide} />
     </mesh>
   );
 }
