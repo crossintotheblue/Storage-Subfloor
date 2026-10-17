@@ -67,15 +67,16 @@ function Player({ refs, playing, onRoom, onLever, setHint }: {
   useFrame((_, raw) => {
     const dt = Math.min(raw, 0.05);
     if (!playing) return;
-    const k = keys.current;
-    const f = (k.KeyW || k.ArrowUp ? 1 : 0) - (k.KeyS || k.ArrowDown ? 1 : 0);
-    const s = (k.KeyD || k.ArrowRight ? 1 : 0) - (k.KeyA || k.ArrowLeft ? 1 : 0);
+    const k = new Proxy(keys.current, {}) as Record<string, boolean> & { [key: string]: boolean };
+    const K = (c: string) => !!k[c];
+    const f = (K("KeyW") || K("ArrowUp") ? 1 : 0) - (K("KeyS") || K("ArrowDown") ? 1 : 0);
+    const s = (K("KeyD") || K("ArrowRight") ? 1 : 0) - (K("KeyA") || K("ArrowLeft") ? 1 : 0);
     const fwd = new THREE.Vector3();
     camera.getWorldDirection(fwd);
     fwd.y = 0; fwd.normalize();
     const right = new THREE.Vector3(-fwd.z, 0, fwd.x);
     const mv = fwd.multiplyScalar(f).add(right.multiplyScalar(s));
-    if (mv.lengthSq() > 0) mv.normalize().multiplyScalar(SPEED * (k.ShiftLeft ? 1.4 : 1) * dt);
+    if (mv.lengthSq() > 0) mv.normalize().multiplyScalar(SPEED * (K("ShiftLeft") ? 1.4 : 1) * dt);
 
     const cur = roomIndexAt(camera.position.z, roomIdx.current);
     const boxes = [cur - 1, cur, cur + 1].filter((i) => i >= 0).flatMap((i) =>

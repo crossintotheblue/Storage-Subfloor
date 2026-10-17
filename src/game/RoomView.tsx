@@ -12,7 +12,7 @@ function Panel({
 }) {
   const geo = useMemo(() => {
     const g = new THREE.PlaneGeometry(w, h);
-    const uv = g.attributes.uv as THREE.BufferAttribute;
+    const uv = g.getAttribute("uv") as THREE.BufferAttribute;
     for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (w / 3), uv.getY(i) * (h / 3));
     return g;
   }, [w, h]);
