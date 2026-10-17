@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Game logic lives in src/game (world.ts = procedural room data + colliders, pure; RoomView/Game = R3F rendering); keeps generation testable apart from rendering.
