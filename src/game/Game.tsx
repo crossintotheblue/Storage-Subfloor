@@ -97,6 +97,7 @@ function Player({ refs, playing, onRoom, onLever, setHint }: {
       if (d < OPEN_DIST && ref.current === 0) ref.current = 1;
     }
 
+    (window as any).__dbg = { x: p.x, z: p.z, cur, door: getRoom(cur).exitX, zb: getRoom(cur).z0 - getRoom(cur).l, open: getRef(refs.doors, cur, 0).current };
     const nowIdx = roomIndexAt(p.z, cur);
     if (nowIdx !== roomIdx.current) { roomIdx.current = nowIdx; onRoom(nowIdx); }
 
