@@ -29,7 +29,7 @@ export function Rush() {
   const group = useRef<THREE.Group>(null);
   const faceRef = useRef<THREE.Group>(null);
   const light = useRef<THREE.PointLight>(null);
-  const puffs = useRef<(THREE.Mesh | null)[]>([]);
+  const puffs = useRef<(THREE.Group | null)[]>([]);
   const trail = useRef<[number, number][]>([]);
 
   useFrame((state) => {
@@ -63,8 +63,8 @@ export function Rush() {
     <group ref={group} visible={false}>
       <pointLight ref={light} color="#ff2a1a" intensity={0} distance={14} decay={1.4} />
       {Array.from({ length: PUFFS }).map((_, k) => (
-        <Billboard key={k}>
-          <mesh ref={(m) => { puffs.current[k] = m; }}>
+        <Billboard key={k} ref={(m: THREE.Group | null) => { puffs.current[k] = m; }}>
+          <mesh>
             <planeGeometry args={[1.6, 1.6]} />
             <meshBasicMaterial map={smoke} transparent depthWrite={false} opacity={0.85 - k * 0.05} />
           </mesh>
