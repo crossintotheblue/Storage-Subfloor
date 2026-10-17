@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { RoomView } from "./RoomView";
 import {
-  DOOR_H, LEVER_BONUS, START_TIME, formatTime, getRoom, resetWorld, roomColliders, roomIndexAt,
+  LEVER_BONUS, START_TIME, formatTime, getRoom, resetWorld, roomColliders, roomIndexAt,
 } from "./world";
 
 const SPEED = 4.2;
@@ -213,7 +213,6 @@ export function Game() {
           </div>
         </div>
       )}
-      <span className="sr-only">{DOOR_H}</span>
     </div>
   );
 }
