@@ -1,7 +1,8 @@
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { DOOR_H, DOOR_W, type Room } from "./world";
+import { DOOR_H, DOOR_W, doorLabel, type Room } from "./world";
+import { fx } from "./fx";
 import { getTextures, numberTexture } from "./textures";
 
 function Panel({
@@ -41,7 +42,7 @@ function WallWithGap({ L, R, z, h, gapX, facing }: { L: number; R: number; z: nu
 function Door({ x, z, n, openRef }: { x: number; z: number; n: number; openRef: { current: number } }) {
   const t = getTextures();
   const hinge = useRef<THREE.Group>(null);
-  const plate = useMemo(() => numberTexture(n), [n]);
+  const plate = useMemo(() => numberTexture(doorLabel(n)), [n]);
   useFrame((_, dt) => {
     if (!hinge.current) return;
     const target = openRef.current > 0 ? -Math.PI * 0.55 : 0;
@@ -85,17 +86,36 @@ function Lever({ rm, usedRef }: { rm: Room; usedRef: { current: boolean } }) {
   );
 }
 
-function Bulb({ x, y, z }: { x: number; y: number; z: number }) {
+function Bulb({ x, y, z, lit }: { x: number; y: number; z: number; lit: boolean }) {
+  const light = useRef<THREE.PointLight>(null);
+  const glow = useRef<THREE.MeshBasicMaterial>(null);
+  useFrame(() => {
+    const on = fx.flicker > 0 ? (Math.random() > 0.45 ? Math.random() * 0.8 : 0.03) : 1;
+    if (light.current) light.current.intensity = 14 * on;
+    if (glow.current) glow.current.color.setScalar(0.15 + 0.85 * on).multiply(new THREE.Color("#ffd27a"));
+  });
   return (
     <group position={[x, y, z]}>
       <mesh position={[0, 0.4, 0]}><cylinderGeometry args={[0.01, 0.01, 0.8]} /><meshBasicMaterial color="#111" /></mesh>
-      <mesh><sphereGeometry args={[0.1, 12, 12]} /><meshBasicMaterial color="#ffd27a" toneMapped={false} /></mesh>
-      <pointLight color="#ffb35c" intensity={14} distance={13} decay={1.6} />
+      <mesh><sphereGeometry args={[0.1, 12, 12]} /><meshBasicMaterial ref={glow} color="#ffd27a" toneMapped={false} /></mesh>
+      {lit && <pointLight ref={light} color="#ffb35c" intensity={14} distance={13} decay={1.6} />}
     </group>
   );
 }
 
-export function RoomView({ rm, doorOpen, leverUsed }: { rm: Room; doorOpen: { current: number }; leverUsed: { current: boolean } }) {
+function Closet({ x, z, side }: { x: number; z: number; side: 1 | -1 }) {
+  const t = getTextures();
+  return (
+    <group position={[x, 0, z]} rotation={[0, side === 1 ? -Math.PI / 2 : Math.PI / 2, 0]}>
+      <mesh position={[0, 1.25, 0]}><boxGeometry args={[1.3, 2.5, 1.1]} /><meshStandardMaterial map={t.crate} color="#cbb89a" roughness={0.8} /></mesh>
+      <mesh position={[0, 1.25, 0.56]}><boxGeometry args={[0.03, 2.3, 0.02]} /><meshStandardMaterial color="#2a1a0e" /></mesh>
+      <mesh position={[-0.1, 1.3, 0.57]}><boxGeometry args={[0.03, 0.25, 0.03]} /><meshStandardMaterial color="#888" metalness={0.8} /></mesh>
+      <mesh position={[0.1, 1.3, 0.57]}><boxGeometry args={[0.03, 0.25, 0.03]} /><meshStandardMaterial color="#888" metalness={0.8} /></mesh>
+    </group>
+  );
+}
+
+export function RoomView({ rm, doorOpen, leverUsed, lit }: { rm: Room; doorOpen: { current: number }; leverUsed: { current: boolean }; lit: boolean }) {
   const t = getTextures();
   const L = rm.cx - rm.w / 2, R = rm.cx + rm.w / 2;
   const zb = rm.z0 - rm.l, zc = rm.z0 - rm.l / 2;
@@ -107,7 +127,7 @@ export function RoomView({ rm, doorOpen, leverUsed }: { rm: Room; doorOpen: { cu
       <Panel w={rm.l} h={rm.h} position={[L, rm.h / 2, zc]} rotation={[0, Math.PI / 2, 0]} map={t.wall} />
       <Panel w={rm.l} h={rm.h} position={[R, rm.h / 2, zc]} rotation={[0, -Math.PI / 2, 0]} map={t.wall} />
       <WallWithGap L={L} R={R} z={rm.z0 - 0.05} h={rm.h} gapX={rm.i === 0 ? null : rm.entryX} facing={-1} />
-      <WallWithGap L={L} R={R} z={zb + 0.05} h={rm.h} gapX={rm.exitX} facing={1} />
+      <WallWithGap L={L} R={R} z={zb + 0.05} h={rm.h} gapX={rm.final ? null : rm.exitX} facing={1} />
 
       {/* ceiling beams and posts */}
       {Array.from({ length: beams }).map((_, k) => {
@@ -158,9 +178,10 @@ export function RoomView({ rm, doorOpen, leverUsed }: { rm: Room; doorOpen: { cu
         </mesh>
       ))}
 
-      <Bulb x={rm.cx} y={rm.h - 0.9} z={rm.z0 - rm.l * 0.3} />
-      {rm.l > 13 && <Bulb x={rm.cx} y={rm.h - 0.9} z={rm.z0 - rm.l * 0.75} />}
-      <Door x={rm.exitX} z={zb} n={rm.i + 1} openRef={doorOpen} />
+      <Bulb lit={lit} x={rm.cx} y={rm.h - 0.9} z={rm.z0 - rm.l * 0.3} />
+      {rm.l > 13 && <Bulb lit={lit} x={rm.cx} y={rm.h - 0.9} z={rm.z0 - rm.l * 0.75} />}
+      {rm.closets.map((c, k) => <Closet key={k} {...c} />)}
+      {!rm.final && <Door x={rm.exitX} z={zb} n={rm.i + 1} openRef={doorOpen} />}
       {rm.lever && <Lever rm={rm} usedRef={leverUsed} />}
     </group>
   );
