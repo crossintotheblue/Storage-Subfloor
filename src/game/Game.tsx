@@ -10,7 +10,7 @@ import {
 const SPEED = 4.2;
 const RADIUS = 0.35;
 const EYE = 1.6;
-const OPEN_DIST = 3.2;
+const OPEN_DIST = 4;
 
 type Refs = {
   doors: Map<number, { current: number }>;
@@ -97,8 +97,6 @@ function Player({ refs, playing, onRoom, onLever, setHint }: {
       if (d < OPEN_DIST && ref.current === 0) ref.current = 1;
     }
 
-    (window as any).__scene = camera.parent;
-    (window as any).__dbg = { x: p.x, z: p.z, cur, door: getRoom(cur).exitX, zb: getRoom(cur).z0 - getRoom(cur).l, open: getRef(refs.doors, cur, 0).current };
     const nowIdx = roomIndexAt(p.z, cur);
     if (nowIdx !== roomIdx.current) { roomIdx.current = nowIdx; onRoom(nowIdx); }
 
