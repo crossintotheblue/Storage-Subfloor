@@ -267,7 +267,7 @@ export function Game() {
   const onDeath = useCallback(() => end("dead", "Something rushed through the room."), [end]);
 
   const low = time <= 30;
-  const title = status === "won" ? "Escaped" : status === "dead" ? "You died" : status === "paused" ? "Paused" : "The Backdoor";
+  const title = status === "won" ? "Escaped" : status === "dead" ? "You died" : status === "paused" ? "Paused" : "The Storage Rooms";
 
   return (
     <div className="fixed inset-0 bg-background">
