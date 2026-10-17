@@ -181,7 +181,7 @@ export function RoomView({ rm, doorOpen, leverUsed, lit }: { rm: Room; doorOpen:
       <Bulb lit={lit} x={rm.cx} y={rm.h - 0.9} z={rm.z0 - rm.l * 0.3} />
       {rm.l > 13 && <Bulb lit={lit} x={rm.cx} y={rm.h - 0.9} z={rm.z0 - rm.l * 0.75} />}
       {rm.closets.map((c, k) => <Closet key={k} {...c} />)}
-      {!rm.final && <Door x={rm.exitX} z={zb} n={rm.i + 1} openRef={doorOpen} />}
+      {!rm.final && <Door x={rm.exitX} z={zb} n={rm.i} openRef={doorOpen} />}
       {rm.lever && <Lever rm={rm} usedRef={leverUsed} />}
     </group>
   );
