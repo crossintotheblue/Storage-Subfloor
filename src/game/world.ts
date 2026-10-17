@@ -40,7 +40,7 @@ export function resetWorld() {
 function makeRoom(i: number): Room {
   const prev = rooms[i - 1];
   const kinds: RoomKind[] = ["hall", "loft", "storage"];
-  const kind = i === 0 ? "loft" : kinds[Math.floor(rand() * 3)];
+  const kind: RoomKind = i === 0 ? "loft" : kinds[Math.floor(rand() * 3)]!;
   const w = kind === "hall" ? r(4.5, 6) : kind === "loft" ? r(9, 14) : r(7, 10);
   const l = kind === "hall" ? r(12, 20) : r(10, 16);
   const h = kind === "loft" ? 5 : 3.8;
@@ -70,7 +70,7 @@ function makeRoom(i: number): Room {
 
 export function getRoom(i: number): Room {
   while (rooms.length <= i) rooms.push(makeRoom(rooms.length));
-  return rooms[i];
+  return rooms[i]!;
 }
 
 export function roomIndexAt(z: number, hint: number): number {
