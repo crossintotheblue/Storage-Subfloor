@@ -133,6 +133,61 @@ function Closet({ x, z, side }: { x: number; z: number; side: 1 | -1 }) {
   );
 }
 
+function Dust({ rm }: { rm: Room }) {
+  const ref = useRef<THREE.Points>(null);
+  const geo = useMemo(() => {
+    const n = Math.floor(rm.w * rm.l * 0.6);
+    const p = new Float32Array(n * 3);
+    for (let k = 0; k < n; k++) {
+      p[k * 3] = rm.cx + (Math.random() - 0.5) * rm.w;
+      p[k * 3 + 1] = Math.random() * rm.h;
+      p[k * 3 + 2] = rm.z0 - Math.random() * rm.l;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(p, 3));
+    return g;
+  }, [rm]);
+  useFrame((st, raw) => {
+    const dt = Math.min(raw, 0.05);
+    const a = geo.getAttribute("position") as THREE.BufferAttribute;
+    const t = st.clock.elapsedTime;
+    for (let k = 0; k < a.count; k++) {
+      let y = a.getY(k) - dt * 0.04;
+      if (y < 0) y = rm.h;
+      a.setY(k, y);
+      a.setX(k, a.getX(k) + Math.sin(t * 0.5 + k) * dt * 0.03);
+    }
+    a.needsUpdate = true;
+  });
+  return (
+    <points ref={ref} geometry={geo}>
+      <pointsMaterial color="#ffd9a0" size={0.025} transparent opacity={0.55} depthWrite={false} sizeAttenuation />
+    </points>
+  );
+}
+
+function Painting({ x, z, side, seed }: { x: number; z: number; side: 1 | -1; seed: number }) {
+  const tex = useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = 128; c.height = 160;
+    const g = c.getContext("2d")!;
+    const hue = 20 + (seed * 47) % 40;
+    g.fillStyle = `hsl(${hue},30%,14%)`; g.fillRect(0, 0, 128, 160);
+    const gr = g.createRadialGradient(64, 70, 5, 64, 70, 70);
+    gr.addColorStop(0, `hsla(${hue + 10},40%,40%,0.9)`); gr.addColorStop(1, "transparent");
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 160);
+    g.fillStyle = "rgba(10,6,3,0.85)";
+    g.beginPath(); g.ellipse(64, 80, 22, 34, 0, 0, Math.PI * 2); g.fill();
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  }, [seed]);
+  return (
+    <group position={[x, 2, z]} rotation={[0, side === 1 ? -Math.PI / 2 : Math.PI / 2, 0]}>
+      <mesh position={[0, 0, 0.03]}><boxGeometry args={[0.9, 1.1, 0.06]} /><meshStandardMaterial color="#6b4a1e" metalness={0.5} roughness={0.4} /></mesh>
+      <mesh position={[0, 0, 0.065]}><planeGeometry args={[0.72, 0.92]} /><meshStandardMaterial map={tex} roughness={0.9} /></mesh>
+    </group>
+  );
+}
+
 export function RoomView({ rm, doorOpen, leverUsed, lit }: { rm: Room; doorOpen: { current: number }; leverUsed: { current: boolean }; lit: boolean }) {
   const t = getTextures();
   const L = rm.cx - rm.w / 2, R = rm.cx + rm.w / 2;
@@ -201,6 +256,18 @@ export function RoomView({ rm, doorOpen, leverUsed, lit }: { rm: Room; doorOpen:
       {rm.closets.map((c, k) => <Closet key={k} {...c} />)}
       {!rm.final && <Door x={rm.exitX} z={zb} n={rm.i} openRef={doorOpen} />}
       {rm.lever && <Lever rm={rm} usedRef={leverUsed} />}
+      <Dust rm={rm} />
+      {rm.kind === "hall" &&
+        ([[-1, 0.2], [1, 0.82]] as const)
+          .filter(([s, f]) => {
+            const z = rm.z0 - rm.l * f;
+            return !(rm.lever && rm.lever.side === s && Math.abs(rm.lever.z - z) < 2) &&
+              !rm.closets.some((c) => c.side === s && Math.abs(c.z - z) < 2) &&
+              !rm.crates.some((c) => Math.sign(c.x - rm.cx) === s && Math.abs(c.z - z) < 1.5);
+          })
+          .map(([s, f]) => (
+            <Painting key={f} side={s} seed={rm.i * 3 + f * 10} x={rm.cx + s * (rm.w / 2 - 0.02)} z={rm.z0 - rm.l * f} />
+          ))}
     </group>
   );
 }
