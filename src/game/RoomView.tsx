@@ -256,6 +256,18 @@ export function RoomView({ rm, doorOpen, leverUsed, lit }: { rm: Room; doorOpen:
       {rm.closets.map((c, k) => <Closet key={k} {...c} />)}
       {!rm.final && <Door x={rm.exitX} z={zb} n={rm.i} openRef={doorOpen} />}
       {rm.lever && <Lever rm={rm} usedRef={leverUsed} />}
+      <Dust rm={rm} />
+      {rm.kind === "hall" &&
+        ([[-1, 0.2], [1, 0.82]] as const)
+          .filter(([s, f]) => {
+            const z = rm.z0 - rm.l * f;
+            return !(rm.lever && rm.lever.side === s && Math.abs(rm.lever.z - z) < 2) &&
+              !rm.closets.some((c) => c.side === s && Math.abs(c.z - z) < 2) &&
+              !rm.crates.some((c) => Math.sign(c.x - rm.cx) === s && Math.abs(c.z - z) < 1.5);
+          })
+          .map(([s, f]) => (
+            <Painting key={f} side={s} seed={rm.i * 3 + f * 10} x={rm.cx + s * (rm.w / 2 - 0.02)} z={rm.z0 - rm.l * f} />
+          ))}
     </group>
   );
 }
