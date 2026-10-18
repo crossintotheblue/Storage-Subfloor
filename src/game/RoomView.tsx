@@ -68,20 +68,38 @@ function Door({ x, z, n, openRef }: { x: number; z: number; n: number; openRef: 
 
 function Lever({ rm, usedRef }: { rm: Room; usedRef: { current: boolean } }) {
   const handle = useRef<THREE.Group>(null);
-  useFrame((_, dt) => {
-    if (!handle.current) return;
-    const target = usedRef.current ? -0.9 : 0.9;
-    handle.current.rotation.x += (target - handle.current.rotation.x) * (1 - Math.exp(-8 * Math.min(dt, 0.05)));
+  const lamp = useRef<THREE.PointLight>(null);
+  const bulb = useRef<THREE.MeshStandardMaterial>(null);
+  const st = useRef({ a: 0.75, v: 0 });
+  useFrame((_, raw) => {
+    const dt = Math.min(raw, 0.05);
+    const s = st.current;
+    const target = usedRef.current ? -0.75 : 0.75; // up -> down swing
+    // damped spring for a heavy, snappy pull with a small overshoot
+    s.v += ((target - s.a) * 180 - s.v * 14) * dt;
+    s.a += s.v * dt;
+    if (handle.current) handle.current.rotation.x = s.a;
+    const col = usedRef.current ? "#3fdc6a" : "#ff4a2a";
+    if (lamp.current) lamp.current.color.set(col);
+    if (bulb.current) { bulb.current.color.set(col); bulb.current.emissive.set(col); }
   });
   const lv = rm.lever!;
   return (
-    <group position={[lv.x, 1.4, lv.z]} rotation={[0, lv.side === 1 ? -Math.PI / 2 : Math.PI / 2, 0]}>
-      <mesh position={[0, 0, 0.05]}><boxGeometry args={[0.5, 0.8, 0.1]} /><meshStandardMaterial color="#4a4038" metalness={0.6} roughness={0.5} /></mesh>
+    <group position={[lv.x, 1.3, lv.z]} rotation={[0, lv.side === 1 ? -Math.PI / 2 : Math.PI / 2, 0]}>
+      {/* backplate */}
+      <mesh position={[0, 0, 0.04]}><boxGeometry args={[0.55, 0.95, 0.08]} /><meshStandardMaterial color="#3a332c" metalness={0.6} roughness={0.55} /></mesh>
+      {/* slot */}
+      <mesh position={[0, 0, 0.085]}><boxGeometry args={[0.08, 0.6, 0.01]} /><meshStandardMaterial color="#0d0b09" /></mesh>
+      {/* pivot hub */}
+      <mesh position={[0, 0, 0.12]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.07, 0.07, 0.22, 16]} /><meshStandardMaterial color="#5c5248" metalness={0.8} roughness={0.35} /></mesh>
+      {/* handle pivots at hub; points along local +y, tilted by rotation.x */}
       <group ref={handle} position={[0, 0, 0.12]}>
-        <mesh position={[0, 0.25, 0.1]} rotation={[0.3, 0, 0]}><cylinderGeometry args={[0.035, 0.035, 0.55]} /><meshStandardMaterial color="#888" metalness={0.9} roughness={0.3} /></mesh>
-        <mesh position={[0, 0.52, 0.18]}><sphereGeometry args={[0.08, 12, 12]} /><meshStandardMaterial color="#b3261e" emissive="#5a0d08" /></mesh>
+        <mesh position={[0, 0.25, 0]}><cylinderGeometry args={[0.03, 0.03, 0.5, 10]} /><meshStandardMaterial color="#9a9a9a" metalness={0.9} roughness={0.3} /></mesh>
+        <mesh position={[0, 0.52, 0]}><sphereGeometry args={[0.075, 14, 14]} /><meshStandardMaterial color="#1d1d1d" roughness={0.6} /></mesh>
       </group>
-      <pointLight position={[0, 0.5, 0.6]} color="#ff8a4a" intensity={2} distance={3} />
+      {/* status lamp */}
+      <mesh position={[0, 0.4, 0.1]}><sphereGeometry args={[0.04, 10, 10]} /><meshStandardMaterial ref={bulb} color="#ff4a2a" emissive="#ff4a2a" emissiveIntensity={2} toneMapped={false} /></mesh>
+      <pointLight ref={lamp} position={[0, 0.4, 0.5]} color="#ff4a2a" intensity={2.5} distance={3.5} />
     </group>
   );
 }
