@@ -10,12 +10,11 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 // treats it as a nested three.js prop and crashes on updates, so strip it from 3D game files.
 const stripTsdSourceInGame = {
   name: "strip-tsd-source-in-game",
+  enforce: "pre" as const,
   transform(code: string, id: string) {
     if (!id.includes("/src/game/") || !code.includes("data-tsd-source")) return;
     return {
-      code: code
-        .replace(/\s*data-tsd-source="[^"]*"/g, "")
-        .replace(/,?\s*"data-tsd-source":\s*"[^"]*"/g, ""),
+      code: code.replace(/\s*data-tsd-source="[^"]*"/g, ""),
       map: null,
     };
   },
